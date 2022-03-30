@@ -28,7 +28,10 @@ import android.os.Bundle;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.ToggleButton;
 
@@ -45,12 +48,16 @@ import org.vosk.android.StorageService;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
+import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 
 import me.xdrop.fuzzywuzzy.FuzzySearch;
 
@@ -72,6 +79,8 @@ public class VoskActivity extends Activity implements
     private TextView resultView;
     private TcpClient mTcpClient;
     private UdpClient udpClient = new UdpClient();
+    private Spinner spinner;
+    private BottomSheetBehavior<LinearLayout> bottomSheetBehavior = new BottomSheetBehavior<>();
 
     @RequiresApi(api = Build.VERSION_CODES.S)
     @Override
@@ -82,8 +91,26 @@ public class VoskActivity extends Activity implements
 //        new ConnectTask().execute("");
 
         // Setup layout
+        spinner = findViewById(R.id.spinner);
+
+        AudioManager audioManager = getApplicationContext().getSystemService(AudioManager.class);
+        AudioDeviceInfo speakerDevice = null;
+        List<AudioDeviceInfo> devices = null;
 
         resultView = findViewById(R.id.result_text);
+        devices = audioManager.getAvailableCommunicationDevices();
+        ArrayList<String> devs = new ArrayList<>();
+        ArrayList<AudioDeviceInfo> devis = new ArrayList<>();
+        for (AudioDeviceInfo device : devices) {
+            System.out.println("AAAAAAAAAAAA "+device.getType());
+            devis.add(device);
+            resultView.append(String.valueOf(device.getType() + "\n"));
+            devs.add(String.valueOf(device.getType()));
+            System.out.println("111111111 "+ device);
+        }
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, devs);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinner.setAdapter(adapter);
         setUiState(STATE_START);
         findViewById(R.id.recognize_file).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -92,28 +119,39 @@ public class VoskActivity extends Activity implements
                 AudioDeviceInfo speakerDevice = null;
                 List<AudioDeviceInfo> devices = null;
 
-                devices = audioManager.getAvailableCommunicationDevices();
-                for (AudioDeviceInfo device : devices) {
-                    System.out.println("AAAAAAAAAAAA "+device.getType());
-                    resultView.append(String.valueOf(device.getType()) + "\n");
-                    if (device.getType() == AudioDeviceInfo.TYPE_BLUETOOTH_SCO) {
-                        speakerDevice = device;
-                        break;
-                    }
-                }
-                if (speakerDevice != null) {
-                    // Turn speakerphone ON.
-                    boolean result = audioManager.setCommunicationDevice(speakerDevice);
-                    if (!result) {
-                        // Handle error.
-                    }
-                }
+//                devices = audioManager.getAvailableCommunicationDevices();
+//                for (AudioDeviceInfo device : devices) {
+//                    System.out.println("AAAAAAAAAAAA "+device.getType());
+//                    resultView.append(String.valueOf(device.getType()) + "\n");
+//                    if (device.getType() == AudioDeviceInfo.TYPE_BLUETOOTH_SCO) {
+//                        speakerDevice = device;
+//                        break;
+//                    }
+//                }
+//                System.out.println("OOOOOOOOOOOOOOO "+ String.valueOf(spinner.getSelectedItem()));
+//                System.out.println("OOOOOOOOOOOOOOO "+ audioManager.getDevices()[0]);
+
+                boolean result = audioManager.setCommunicationDevice(devis.get(devs.indexOf(spinner.getSelectedItem())));
+
+
             }
         });
         findViewById(R.id.recognize_mic).setOnClickListener(view -> recognizeMicrophone());
         ((ToggleButton) findViewById(R.id.pause)).setOnCheckedChangeListener((view, isChecked) -> pause(isChecked));
 
         LibVosk.setLogLevel(LogLevel.INFO);
+
+        bottomSheetBehavior.addBottomSheetCallback(new BottomSheetBehavior.BottomSheetCallback() {
+            @Override
+            public void onStateChanged(@NonNull View bottomSheet, int newState) {
+
+            }
+
+            @Override
+            public void onSlide(@NonNull View bottomSheet, float slideOffset) {
+
+            }
+        });
 
         // Check if user has given permission to record audio, init the model after permission is granted
         int permissionCheck = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.RECORD_AUDIO);
@@ -222,7 +260,7 @@ public class VoskActivity extends Activity implements
 
     @Override
     public void onPartialResult(String hypothesis) {
-        resultView.append(hypothesis + "\n");
+        //resultView.append(hypothesis + "\n");
 //        try {
 //            JSONObject jObject = new JSONObject(hypothesis);
 //            jObject = new JSONObject(hypothesis);
