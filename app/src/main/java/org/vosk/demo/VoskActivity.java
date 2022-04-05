@@ -86,7 +86,7 @@ public class VoskActivity extends Activity implements
     @Override
     public void onCreate(Bundle state) {
         super.onCreate(state);
-        setContentView(R.layout.main);
+        setContentView(R.layout.main_main);
 
 //        new ConnectTask().execute("");
 
@@ -98,19 +98,25 @@ public class VoskActivity extends Activity implements
         List<AudioDeviceInfo> devices = null;
 
         resultView = findViewById(R.id.result_text);
-        devices = audioManager.getAvailableCommunicationDevices();
-        ArrayList<String> devs = new ArrayList<>();
-        ArrayList<AudioDeviceInfo> devis = new ArrayList<>();
-        for (AudioDeviceInfo device : devices) {
-            System.out.println("AAAAAAAAAAAA "+device.getType());
-            devis.add(device);
-            resultView.append(String.valueOf(device.getType() + "\n"));
-            devs.add(String.valueOf(device.getType()));
-            System.out.println("111111111 "+ device);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            devices = audioManager.getAvailableCommunicationDevices();
+            ArrayList<String> devs = new ArrayList<>();
+            ArrayList<AudioDeviceInfo> devis = new ArrayList<>();
+            for (AudioDeviceInfo device : devices) {
+                System.out.println("AAAAAAAAAAAA "+device.getType());
+                devis.add(device);
+                resultView.append(String.valueOf(device.getType() + "\n"));
+                devs.add(String.valueOf(device.getType()));
+                System.out.println("111111111 "+ device);
+            }
+            ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, devs);
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            spinner.setAdapter(adapter);
+            boolean result = audioManager.setCommunicationDevice(devis.get(devs.indexOf(spinner.getSelectedItem())));
+        } else {
+
         }
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, devs);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinner.setAdapter(adapter);
         setUiState(STATE_START);
         findViewById(R.id.recognize_file).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -130,8 +136,6 @@ public class VoskActivity extends Activity implements
 //                }
 //                System.out.println("OOOOOOOOOOOOOOO "+ String.valueOf(spinner.getSelectedItem()));
 //                System.out.println("OOOOOOOOOOOOOOO "+ audioManager.getDevices()[0]);
-
-                boolean result = audioManager.setCommunicationDevice(devis.get(devs.indexOf(spinner.getSelectedItem())));
 
 
             }

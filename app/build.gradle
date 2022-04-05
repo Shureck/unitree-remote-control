@@ -37,5 +37,4 @@ dependencies {
     implementation 'me.xdrop:fuzzywuzzy:1.4.0'
     implementation project(':models')
     implementation 'androidx.coordinatorlayout:coordinatorlayout:1.1.0'
-    implementation 'com.google.android.material:material:1.4.0'
 }
