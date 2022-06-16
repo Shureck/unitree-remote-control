@@ -176,6 +176,7 @@ public class VoskActivity extends Activity implements
     }
 
 
+
     @Override
     public void onRequestPermissionsResult(int requestCode,
                                            @NonNull String[] permissions, @NonNull int[] grantResults) {
