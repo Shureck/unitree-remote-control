@@ -21,9 +21,10 @@
         android:usesCleartextTraffic="true"
         android:label="@string/app_name"
         android:dataExtractionRules="@xml/data_extraction_rules"
-        tools:targetApi="s">
+        tools:targetApi="s"
+        android:theme="@style/Theme.AppCompat.NoActionBar">
         <activity
-            android:name="VoskActivity"
+            android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

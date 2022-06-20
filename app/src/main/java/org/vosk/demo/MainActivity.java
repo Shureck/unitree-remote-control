@@ -1,6 +1,8 @@
 package org.vosk.demo;
 
+import android.Manifest;
 import android.app.Dialog;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
@@ -16,16 +18,22 @@ import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+
+import org.vosk.android.RecognitionListener;
+import org.vosk.android.StorageService;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 
-public class MainActivity extends AppCompatActivity implements CompoundButton.OnCheckedChangeListener {
+public class MainActivity extends AppCompatActivity implements CompoundButton.OnCheckedChangeListener{
     private TextView angleTextView1, angleTextView2;
     private TextView powerTextView1, powerTextView2;
     private Button button_up, button_right, button_left, button_down, button_y1, button_y2,
@@ -38,7 +46,8 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
     private double HIGHT = 100;
     private double LOW_2 = 0;
     private double HIGHT_2 = 255;
-
+    private VoskActivity voskActivity;
+    private static final int PERMISSIONS_REQUEST_RECORD_AUDIO = 1;
     private byte[] send = new byte[]{0, 0, 0, 0, 0, 0, 0, 0};
     private boolean sendUdp;
 
@@ -60,7 +69,7 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
         setContentView(R.layout.activity_main);
-
+        voskActivity = new VoskActivity(this);
         //Referencing also other views
         joystick = (org.vosk.demo.JoystickView) findViewById(R.id.joystickView);
         joystick2 = (org.vosk.demo.JoystickView) findViewById(R.id.joystickView2);
@@ -77,7 +86,12 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
         settigs = (FloatingActionButton) findViewById(R.id.settings);
 
 
-
+        int permissionCheck = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.RECORD_AUDIO);
+        if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, PERMISSIONS_REQUEST_RECORD_AUDIO);
+        } else {
+            voskActivity.initModel();
+        }
 
         WebView webView = findViewById(R.id.puge);
 //        webView.loadUrl("file:///android_asset/mypage.html");
@@ -150,6 +164,8 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
             }
 
         });
+
+
 
 //        Thread ttt = new Thread(new Runnable() {
 //            @Override
@@ -359,9 +375,15 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
 
         Switch switch_micro = findViewById(R.id.micro);
         Switch switch_camera = findViewById(R.id.camera);
-        if (switch_micro != null) switch_micro.setOnCheckedChangeListener(this);
+        if (switch_micro != null) {
+            switch_micro.setOnCheckedChangeListener(this);
+            switch_micro.setTransitionName("micro");
+        }
 
-        if (switch_camera != null) switch_camera.setOnCheckedChangeListener(this);
+        if (switch_camera != null) {
+            switch_camera.setOnCheckedChangeListener(this);
+            switch_camera.setTransitionName("camera");
+        }
 
         Dialog dialog = new Dialog(MainActivity.this);
 
@@ -415,8 +437,25 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
 
     @Override
     public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-        Toast.makeText(this, "Отслеживание переключения: " + buttonView.getId() + "\n"+ (isChecked ? "on" : "off"),
-                Toast.LENGTH_SHORT).show();
+//        Toast.makeText(this, "Отслеживание переключения: " + findViewById(buttonView.getId()).getTransitionName() + "\n"+ (isChecked ? "on" : "off"),
+//                Toast.LENGTH_SHORT).show();
+        if (buttonView.getTransitionName().compareTo("micro") == 0){
+            if (isChecked) {
+                voskActivity.recognizeMicrophone();
+            }
+            else{
+                voskActivity.pause(true);
+            }
+        }
+        if (buttonView.getTransitionName().compareTo("camera") == 0){
+            if (isChecked) {
+
+            }
+            else{
+
+            }
+        }
+
     }
 
 

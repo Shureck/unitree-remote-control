@@ -54,7 +54,7 @@ import androidx.core.content.ContextCompat;
 
 import me.xdrop.fuzzywuzzy.FuzzySearch;
 
-public class VoskActivity extends Activity implements
+public class VoskActivity implements
         RecognitionListener {
 
     static private final int STATE_START = 0;
@@ -65,7 +65,7 @@ public class VoskActivity extends Activity implements
 
     /* Used to handle permission request */
     private static final int PERMISSIONS_REQUEST_RECORD_AUDIO = 1;
-
+    private Context context;
     private Model model;
     private SpeechService speechService;
     private SpeechStreamService speechStreamService;
@@ -74,80 +74,59 @@ public class VoskActivity extends Activity implements
     private UdpClient udpClient = new UdpClient();
 
     @RequiresApi(api = Build.VERSION_CODES.S)
-    @Override
-    public void onCreate(Bundle state) {
-        super.onCreate(state);
-        setContentView(R.layout.main);
-
+    public VoskActivity(Context context) {
+//        super.onCreate(state);
+        this.context = context;
 //        new ConnectTask().execute("");
 
         // Setup layout
-
-        resultView = findViewById(R.id.result_text);
-        setUiState(STATE_START);
-        findViewById(R.id.recognize_file).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                AudioManager audioManager = getApplicationContext().getSystemService(AudioManager.class);
-                AudioDeviceInfo speakerDevice = null;
-                List<AudioDeviceInfo> devices = null;
-
-                devices = audioManager.getAvailableCommunicationDevices();
-                for (AudioDeviceInfo device : devices) {
-                    System.out.println("AAAAAAAAAAAA "+device.getType());
-                    resultView.append(String.valueOf(device.getType()) + "\n");
-                    if (device.getType() == AudioDeviceInfo.TYPE_BLUETOOTH_SCO) {
-                        speakerDevice = device;
-                        break;
-                    }
-                }
-                if (speakerDevice != null) {
-                    // Turn speakerphone ON.
-                    boolean result = audioManager.setCommunicationDevice(speakerDevice);
-                    if (!result) {
-                        // Handle error.
-                    }
-                }
-            }
-        });
-        findViewById(R.id.recognize_mic).setOnClickListener(view -> recognizeMicrophone());
-        ((ToggleButton) findViewById(R.id.pause)).setOnCheckedChangeListener((view, isChecked) -> pause(isChecked));
-
-        LibVosk.setLogLevel(LogLevel.INFO);
-
-        // Check if user has given permission to record audio, init the model after permission is granted
-        int permissionCheck = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.RECORD_AUDIO);
-        if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, PERMISSIONS_REQUEST_RECORD_AUDIO);
-        } else {
-            initModel();
-        }
+//        setUiState(STATE_START);
+//        findViewById(R.id.recognize_file).setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                AudioManager audioManager = getApplicationContext().getSystemService(AudioManager.class);
+//                AudioDeviceInfo speakerDevice = null;
+//                List<AudioDeviceInfo> devices = null;
+//
+//                devices = audioManager.getAvailableCommunicationDevices();
+//                for (AudioDeviceInfo device : devices) {
+//                    System.out.println("AAAAAAAAAAAA "+device.getType());
+//                    resultView.append(String.valueOf(device.getType()) + "\n");
+//                    if (device.getType() == AudioDeviceInfo.TYPE_BLUETOOTH_SCO) {
+//                        speakerDevice = device;
+//                        break;
+//                    }
+//                }
+//                if (speakerDevice != null) {
+//                    // Turn speakerphone ON.
+//                    boolean result = audioManager.setCommunicationDevice(speakerDevice);
+//                    if (!result) {
+//                        // Handle error.
+//                    }
+//                }
+//            }
+//        });
+//        findViewById(R.id.recognize_mic).setOnClickListener(view -> recognizeMicrophone());
+//        ((ToggleButton) findViewById(R.id.pause)).setOnCheckedChangeListener((view, isChecked) -> pause(isChecked));
+//
+//        LibVosk.setLogLevel(LogLevel.INFO);
+//
+//        // Check if user has given permission to record audio, init the model after permission is granted
+//        int permissionCheck = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.RECORD_AUDIO);
+//        if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
+//            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, PERMISSIONS_REQUEST_RECORD_AUDIO);
+//        } else {
+//            initModel();
+//        }
     }
 
-    private void initModel() {
-        StorageService.unpack(this, "model-en-us", "model",
+    public void initModel() {
+        StorageService.unpack(context, "model-en-us", "model",
                 (model) -> {
                     this.model = model;
-                    setUiState(STATE_READY);
+//                    setUiState(STATE_READY);
                 },
                 (exception) -> setErrorState("Failed to unpack the model" + exception.getMessage()));
-    }
-
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-
-        if (requestCode == PERMISSIONS_REQUEST_RECORD_AUDIO) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                // Recognizer initialization is a time-consuming and it involves IO,
-                // so we execute it in async task
-                initModel();
-            } else {
-                finish();
-            }
-        }
     }
 
 //    public class ConnectTask extends AsyncTask<String, String, TcpClient> {
@@ -179,19 +158,19 @@ public class VoskActivity extends Activity implements
 //        }
 //    }
 
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-
-        if (speechService != null) {
-            speechService.stop();
-            speechService.shutdown();
-        }
-
-        if (speechStreamService != null) {
-            speechStreamService.stop();
-        }
-    }
+//    @Override
+//    public void onDestroy() {
+//        super.onDestroy();
+//
+//        if (speechService != null) {
+//            speechService.stop();
+//            speechService.shutdown();
+//        }
+//
+//        if (speechStreamService != null) {
+//            speechStreamService.stop();
+//        }
+//    }
 
     @Override
     public void onResult(String hypothesis) {
@@ -199,7 +178,7 @@ public class VoskActivity extends Activity implements
             JSONObject jObject = new JSONObject(hypothesis);
             String res = jObject.getString("text");
             System.out.println(res);
-            resultView.append(hypothesis + " " + FuzzySearch.ratio(res,"собака лежать") + "\n");
+//            resultView.append(hypothesis + " " + FuzzySearch.ratio(res,"собака лежать") + "\n");
 
 //            if (mTcpClient != null) {
 //                mTcpClient.sendMessage(res);
@@ -213,8 +192,7 @@ public class VoskActivity extends Activity implements
 
     @Override
     public void onFinalResult(String hypothesis) {
-        resultView.append(hypothesis + "\n");
-        setUiState(STATE_DONE);
+//        resultView.append(hypothesis + "\n");
         if (speechStreamService != null) {
             speechStreamService = null;
         }
@@ -222,7 +200,7 @@ public class VoskActivity extends Activity implements
 
     @Override
     public void onPartialResult(String hypothesis) {
-        resultView.append(hypothesis + "\n");
+//        resultView.append(hypothesis + "\n");
 //        try {
 //            JSONObject jObject = new JSONObject(hypothesis);
 //            jObject = new JSONObject(hypothesis);
@@ -240,65 +218,70 @@ public class VoskActivity extends Activity implements
 
     @Override
     public void onTimeout() {
-        setUiState(STATE_DONE);
+
     }
 
-    private void setUiState(int state) {
-        switch (state) {
-            case STATE_START:
-                resultView.setText(R.string.preparing);
-                resultView.setMovementMethod(new ScrollingMovementMethod());
-                findViewById(R.id.recognize_file).setEnabled(false);
-                findViewById(R.id.recognize_mic).setEnabled(false);
-                findViewById(R.id.pause).setEnabled((false));
-                break;
-            case STATE_READY:
-                resultView.setText(R.string.ready);
-                ((Button) findViewById(R.id.recognize_mic)).setText(R.string.recognize_microphone);
-                findViewById(R.id.recognize_file).setEnabled(true);
-                findViewById(R.id.recognize_mic).setEnabled(true);
-                findViewById(R.id.pause).setEnabled((false));
-                break;
-            case STATE_DONE:
-                ((Button) findViewById(R.id.recognize_file)).setText(R.string.recognize_file);
-                ((Button) findViewById(R.id.recognize_mic)).setText(R.string.recognize_microphone);
-                findViewById(R.id.recognize_file).setEnabled(true);
-                findViewById(R.id.recognize_mic).setEnabled(true);
-                findViewById(R.id.pause).setEnabled((false));
-                break;
-            case STATE_FILE:
-                ((Button) findViewById(R.id.recognize_file)).setText(R.string.stop_file);
-                resultView.setText(getString(R.string.starting));
-                findViewById(R.id.recognize_mic).setEnabled(false);
-                findViewById(R.id.recognize_file).setEnabled(true);
-                findViewById(R.id.pause).setEnabled((false));
-                break;
-            case STATE_MIC:
-                ((Button) findViewById(R.id.recognize_mic)).setText(R.string.stop_microphone);
-                resultView.setText(getString(R.string.say_something));
-                findViewById(R.id.recognize_file).setEnabled(false);
-                findViewById(R.id.recognize_mic).setEnabled(true);
-                findViewById(R.id.pause).setEnabled((true));
-                break;
-            default:
-                throw new IllegalStateException("Unexpected value: " + state);
-        }
-    }
+//    @Override
+//    public void onTimeout() {
+//        setUiState(STATE_DONE);
+//    }
+
+//    private void setUiState(int state) {
+//        switch (state) {
+//            case STATE_START:
+//                resultView.setText(R.string.preparing);
+//                resultView.setMovementMethod(new ScrollingMovementMethod());
+//                findViewById(R.id.recognize_file).setEnabled(false);
+//                findViewById(R.id.recognize_mic).setEnabled(false);
+//                findViewById(R.id.pause).setEnabled((false));
+//                break;
+//            case STATE_READY:
+//                resultView.setText(R.string.ready);
+//                ((Button) findViewById(R.id.recognize_mic)).setText(R.string.recognize_microphone);
+//                findViewById(R.id.recognize_file).setEnabled(true);
+//                findViewById(R.id.recognize_mic).setEnabled(true);
+//                findViewById(R.id.pause).setEnabled((false));
+//                break;
+//            case STATE_DONE:
+//                ((Button) findViewById(R.id.recognize_file)).setText(R.string.recognize_file);
+//                ((Button) findViewById(R.id.recognize_mic)).setText(R.string.recognize_microphone);
+//                findViewById(R.id.recognize_file).setEnabled(true);
+//                findViewById(R.id.recognize_mic).setEnabled(true);
+//                findViewById(R.id.pause).setEnabled((false));
+//                break;
+//            case STATE_FILE:
+//                ((Button) findViewById(R.id.recognize_file)).setText(R.string.stop_file);
+//                resultView.setText(getString(R.string.starting));
+//                findViewById(R.id.recognize_mic).setEnabled(false);
+//                findViewById(R.id.recognize_file).setEnabled(true);
+//                findViewById(R.id.pause).setEnabled((false));
+//                break;
+//            case STATE_MIC:
+//                ((Button) findViewById(R.id.recognize_mic)).setText(R.string.stop_microphone);
+//                resultView.setText(getString(R.string.say_something));
+//                findViewById(R.id.recognize_file).setEnabled(false);
+//                findViewById(R.id.recognize_mic).setEnabled(true);
+//                findViewById(R.id.pause).setEnabled((true));
+//                break;
+//            default:
+//                throw new IllegalStateException("Unexpected value: " + state);
+//        }
+//    }
 
     private void setErrorState(String message) {
-        resultView.setText(message);
-        ((Button) findViewById(R.id.recognize_mic)).setText(R.string.recognize_microphone);
-        findViewById(R.id.recognize_file).setEnabled(false);
-        findViewById(R.id.recognize_mic).setEnabled(false);
+//        resultView.setText(message);
+//        ((Button) findViewById(R.id.recognize_mic)).setText(R.string.recognize_microphone);
+//        findViewById(R.id.recognize_file).setEnabled(false);
+//        findViewById(R.id.recognize_mic).setEnabled(false);
     }
 
-    private void recognizeMicrophone() {
+    public void recognizeMicrophone() {
         if (speechService != null) {
-            setUiState(STATE_DONE);
+//            setUiState(STATE_DONE);
             speechService.stop();
             speechService = null;
         } else {
-            setUiState(STATE_MIC);
+//            setUiState(STATE_MIC);
             try {
                 Recognizer rec = new Recognizer(model, 16000.0f);
                 speechService = new SpeechService(rec, 16000.0f);
@@ -310,7 +293,7 @@ public class VoskActivity extends Activity implements
     }
 
 
-    private void pause(boolean checked) {
+    public void pause(boolean checked) {
         if (speechService != null) {
             speechService.setPause(checked);
         }
