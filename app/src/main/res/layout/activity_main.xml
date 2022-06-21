@@ -7,6 +7,19 @@
     android:layout_height="fill_parent"
     android:orientation="vertical">
 
+    <Button
+        android:id="@+id/bt_start"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="56dp"
+        android:layout_marginTop="28dp"
+        android:backgroundTint="@color/joystick"
+        android:text="START"
+        android:visibility="visible"
+        app:iconTint="@color/joystick"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/constraintLayout"
         android:layout_width="match_parent"
@@ -20,7 +33,7 @@
             android:id="@+id/puge"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            tools:layout_editor_absoluteX="16dp"
+            tools:layout_editor_absoluteX="0dp"
             tools:layout_editor_absoluteY="0dp">
 
         </WebView>
@@ -28,23 +41,20 @@
 
     <org.vosk.demo.JoystickView
         android:id="@+id/joystickView"
-        android:layout_width="110dp"
-        android:layout_height="102dp"
-        android:layout_marginTop="100dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.155"
+        android:layout_width="220dp"
+        android:layout_height="204dp"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="200dp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.0" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <org.vosk.demo.JoystickView
         android:id="@+id/joystickView2"
-        android:layout_width="110dp"
-        android:layout_height="102dp"
+        android:layout_width="220dp"
+        android:layout_height="204dp"
+        android:layout_marginEnd="12dp"
         app:layout_constraintBottom_toBottomOf="@+id/joystickView"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.912"
-        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/joystickView"
         app:layout_constraintVertical_bias="0.0" />
 
@@ -52,12 +62,11 @@
         android:id="@+id/settings"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="143dp"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="108dp"
         android:clickable="true"
         android:minHeight="48dp"
         app:backgroundTint="#31FFFFFF"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="@+id/gridLayout"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:srcCompat="@android:drawable/ic_menu_preferences" />
@@ -86,6 +95,7 @@
         android:layout_width="101dp"
         android:layout_height="102dp"
         android:layout_marginTop="32dp"
+        android:visibility="gone"
         app:layout_constraintEnd_toEndOf="@+id/joystickView"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="@+id/joystickView"
@@ -129,6 +139,7 @@
     <androidx.gridlayout.widget.GridLayout
         android:layout_width="98dp"
         android:layout_height="98dp"
+        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="@+id/gridLayout"
         app:layout_constraintEnd_toEndOf="@+id/joystickView2"
         app:layout_constraintHorizontal_bias="1.0"
@@ -157,7 +168,7 @@
         <Button
             android:id="@+id/button_x1"
             android:layout_width="32dp"
-            android:layout_height="33dp"
+            android:layout_height="28dp"
             android:backgroundTint="@color/joystick"
             android:visibility="visible"
             app:iconTint="@color/joystick"

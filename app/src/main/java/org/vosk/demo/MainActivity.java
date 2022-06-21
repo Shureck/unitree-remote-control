@@ -37,7 +37,7 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
     private TextView angleTextView1, angleTextView2;
     private TextView powerTextView1, powerTextView2;
     private Button button_up, button_right, button_left, button_down, button_y1, button_y2,
-            button_x1, button_x2, select;
+            button_x1, button_x2, select, startBt;
     FloatingActionButton settigs;
     private Spinner spinner;
     // Importing also other views
@@ -48,12 +48,12 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
     private double HIGHT_2 = 255;
     private VoskActivity voskActivity;
     private static final int PERMISSIONS_REQUEST_RECORD_AUDIO = 1;
-    private byte[] send = new byte[]{0, 0, 0, 0, 0, 0, 0, 0};
+    private String sendMsg;
     private boolean sendUdp;
-
+    private boolean toggle = false;
     // TODO ПОМЕНЯТЬ!!
-    private String outputIP = "localhost";
-    private Integer broadcastPort = 5060;
+    private String outputIP = "192.168.123.12";
+    private Integer broadcastPort = 13;
 
     public int result_devise = 0;
 
@@ -84,7 +84,7 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
         button_x2 = (Button) findViewById(R.id.button_x2);
         select = (Button) findViewById(R.id.select);
         settigs = (FloatingActionButton) findViewById(R.id.settings);
-
+        startBt = (Button) findViewById(R.id.bt_start);
 
         int permissionCheck = ContextCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.RECORD_AUDIO);
         if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
@@ -93,9 +93,25 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
             voskActivity.initModel();
         }
 
+        startBt.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(!toggle) {
+                    sendMsg = "1;11";
+                    sendUdp = true;
+                    toggle = true;
+                }
+                else{
+                    sendMsg = "3;0";
+                    sendUdp = true;
+                    toggle = false;
+                }
+            }
+        });
+
         WebView webView = findViewById(R.id.puge);
 //        webView.loadUrl("file:///android_asset/mypage.html");
-        webView.loadUrl("https://thiscatdoesnotexist.com/");
+        webView.loadUrl("http://192.168.123.12:8080/?action=stream");
         webView.getSettings().setJavaScriptEnabled(true);
         //-----UDP send thread
         Thread udpSendThread = new Thread(new Runnable() {
@@ -107,7 +123,7 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
                 while (true) {
 
                     try {
-                        Thread.sleep(100);
+                        Thread.sleep(16);
                     } catch (InterruptedException e1) {
                         // TODO Auto-generated catch block
                         e1.printStackTrace();
@@ -120,7 +136,6 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
                             // get server name
 
                             InetAddress serverAddr = InetAddress.getByName(outputIP);
-                            Log.d("UDP", "C: Connecting...");
 
                             // create new UDP socket
                             DatagramSocket socket = new DatagramSocket();
@@ -129,31 +144,18 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
                             // byte[] buf = udpOutputData.getBytes();
 
                             // create a UDP packet with data and its destination ip & port
-                            DatagramPacket packet = new DatagramPacket(send, send.length, serverAddr, broadcastPort);
-                            Log.d("UDP", "C: Sending: '" + new String(send) + "'");
+                            DatagramPacket packet = new DatagramPacket(sendMsg.getBytes(), sendMsg.length(), serverAddr, broadcastPort);
+                            Log.d("UDP", "C: Sending: '" + sendMsg + "'");
 
                             // send the UDP packet
                             socket.send(packet);
 
                             socket.close();
 
-                            Log.d("UDP", "C: Sent.");
-                            Log.d("UDP", "C: Done.");
-
-                            for (int i = 0; i < 8; i++) {
-                                send[i] = (byte) 0;
-                            }
                         } catch (Exception e) {
 
                             Log.e("UDP", "C: Error", e);
 
-                        }
-
-                        try {
-                            Thread.sleep(100);
-                        } catch (InterruptedException e) {
-                            // TODO Auto-generated catch block
-                            e.printStackTrace();
                         }
 
 
@@ -204,7 +206,7 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
 //            }
 //        });
 //
-//        ttt.start();
+        udpSendThread.start();
 
         //Event listener that always returns the variation of the angle in degrees, motion power in percentage and direction of movement
         joystick.setOnJoystickMoveListener(new org.vosk.demo.JoystickView.OnJoystickMoveListener() {
@@ -212,14 +214,26 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
             @Override
             public void onValueChanged(int angle, int power, int direction) {
                 // TODO Auto-generated method stub
-                double Y = Math.cos(Math.toRadians((double) angle)) * power;
-                double X = Math.sin(Math.toRadians((double) angle)) * power;
-                System.out.println(result_devise);
-                send[0] = (byte) map(X);
-                send[1] = (byte) map(Y);
+                double Y = Math.cos(Math.toRadians((double) angle)) * power / 100;
+                double X = Math.sin(Math.toRadians((double) angle)) * power / 100;
+//                System.out.println(result_devise);
+                sendMsg = "3;1;"+ (Y * -1) +";"+ (X * -1);
                 sendUdp = true;
             }
         }, org.vosk.demo.JoystickView.DEFAULT_LOOP_INTERVAL);
+
+        joystick.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+
+                if( motionEvent.getAction() == MotionEvent.ACTION_UP){
+                    sendMsg = "3;1;"+ 0 +";"+ 0;
+                    sendUdp = true;
+                }
+
+                return false;
+            }
+        });
 
         //Event listener that always returns the variation of the angle in degrees, motion power in percentage and direction of movement
         joystick2.setOnJoystickMoveListener(new org.vosk.demo.JoystickView.OnJoystickMoveListener() {
@@ -227,151 +241,163 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
             @Override
             public void onValueChanged(int angle, int power, int direction) {
                 // TODO Auto-generated method stub
-                double Y = Math.cos(Math.toRadians((double) angle)) * power;
-                double X = Math.sin(Math.toRadians((double) angle)) * power;
-                send[2] = (byte) map(X);
-                send[3] = (byte) map(Y);
+                double Y = Math.cos(Math.toRadians((double) angle)) * power / 100;
+                double X = Math.sin(Math.toRadians((double) angle)) * power / 100;
+                sendMsg = "3;2;"+X+";"+Y;
                 sendUdp = true;
 
             }
         }, org.vosk.demo.JoystickView.DEFAULT_LOOP_INTERVAL);
 
+        joystick2.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+
+                if( motionEvent.getAction() == MotionEvent.ACTION_UP){
+                    sendMsg = "3;2;"+ 0 +";"+ 0;
+                    sendUdp = true;
+                }
+
+                return false;
+            }
+        });
+
         // устанавливаем один обработчик для всех кнопок
         // Left joystick
 
-        button_up.setOnTouchListener(new View.OnTouchListener() {
-
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                switch (event.getAction()) {
-                    case MotionEvent.ACTION_DOWN: // нажатие
-                        send[4] |= 16;
-                        sendUdp = true;
-                        break;
-                    case MotionEvent.ACTION_UP: // отпускание
-                        send[4] ^= 16;
-                        break;
-                }
-                return false;
-            }
-        });
-        button_down.setOnTouchListener(new View.OnTouchListener() {
-
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                switch (event.getAction()) {
-                    case MotionEvent.ACTION_DOWN: // нажатие
-                        send[4] |= 1;
-                        sendUdp = true;
-                        break;
-                    case MotionEvent.ACTION_UP: // отпускание
-                        send[4] ^= 1;
-                        break;
-                }
-                return false;
-            }
-        });
-        button_left.setOnTouchListener(new View.OnTouchListener() {
-
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                switch (event.getAction()) {
-                    case MotionEvent.ACTION_DOWN: // нажатие
-                        send[5] |= 16;
-                        sendUdp = true;
-                        break;
-                    case MotionEvent.ACTION_UP: // отпускание
-                        send[5] ^= 16;
-                        break;
-                }
-                return false;
-            }
-        });
-        button_right.setOnTouchListener(new View.OnTouchListener() {
-
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                switch (event.getAction()) {
-                    case MotionEvent.ACTION_DOWN: // нажатие
-                        send[5] |= 1;
-                        sendUdp = true;
-                        break;
-                    case MotionEvent.ACTION_UP: // отпускание
-                        send[5] ^= 1;
-                        break;
-                }
-                return false;
-            }
-        });
-
-        button_x1.setOnTouchListener(new View.OnTouchListener() {
-
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                switch (event.getAction()) {
-                    case MotionEvent.ACTION_DOWN: // нажатие
-                        send[6] |= 16;
-                        sendUdp = true;
-                        break;
-                    case MotionEvent.ACTION_UP: // отпускание
-                        send[6] ^= 16;
-                        break;
-                }
-                return false;
-            }
-        });
-        ;
-        button_x2.setOnTouchListener(new View.OnTouchListener() {
-
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                switch (event.getAction()) {
-                    case MotionEvent.ACTION_DOWN: // нажатие
-                        send[6] |= 1;
-                        sendUdp = true;
-                        break;
-                    case MotionEvent.ACTION_UP: // отпускание
-                        send[6] ^= 1;
-                        break;
-                }
-                return false;
-            }
-        });
-        ;
-        button_y1.setOnTouchListener(new View.OnTouchListener() {
-
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                switch (event.getAction()) {
-                    case MotionEvent.ACTION_DOWN: // нажатие
-                        send[7] |= 16;
-                        sendUdp = true;
-                        break;
-                    case MotionEvent.ACTION_UP: // отпускание
-                        send[7] ^= 16;
-                        break;
-                }
-                return false;
-            }
-        });
-        ;
-        button_y2.setOnTouchListener(new View.OnTouchListener() {
-
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                switch (event.getAction()) {
-                    case MotionEvent.ACTION_DOWN: // нажатие
-                        send[7] |= 1;
-                        sendUdp = true;
-                        break;
-                    case MotionEvent.ACTION_UP: // отпускание
-                        send[7] ^= 1;
-                        break;
-                }
-                return false;
-            }
-        });
-        ;
+//        button_up.setOnTouchListener(new View.OnTouchListener() {
+//
+//            @Override
+//            public boolean onTouch(View v, MotionEvent event) {
+//                switch (event.getAction()) {
+//                    case MotionEvent.ACTION_DOWN: // нажатие
+//                        send[4] |= 16;
+//                        sendUdp = true;
+//                        break;
+//                    case MotionEvent.ACTION_UP: // отпускание
+//                        send[4] ^= 16;
+//                        break;
+//                }
+//                return false;
+//            }
+//        });
+//        button_down.setOnTouchListener(new View.OnTouchListener() {
+//
+//            @Override
+//            public boolean onTouch(View v, MotionEvent event) {
+//                switch (event.getAction()) {
+//                    case MotionEvent.ACTION_DOWN: // нажатие
+//                        send[4] |= 1;
+//                        sendUdp = true;
+//                        break;
+//                    case MotionEvent.ACTION_UP: // отпускание
+//                        send[4] ^= 1;
+//                        break;
+//                }
+//                return false;
+//            }
+//        });
+//        button_left.setOnTouchListener(new View.OnTouchListener() {
+//
+//            @Override
+//            public boolean onTouch(View v, MotionEvent event) {
+//                switch (event.getAction()) {
+//                    case MotionEvent.ACTION_DOWN: // нажатие
+//                        send[5] |= 16;
+//                        sendUdp = true;
+//                        break;
+//                    case MotionEvent.ACTION_UP: // отпускание
+//                        send[5] ^= 16;
+//                        break;
+//                }
+//                return false;
+//            }
+//        });
+//        button_right.setOnTouchListener(new View.OnTouchListener() {
+//
+//            @Override
+//            public boolean onTouch(View v, MotionEvent event) {
+//                switch (event.getAction()) {
+//                    case MotionEvent.ACTION_DOWN: // нажатие
+//                        send[5] |= 1;
+//                        sendUdp = true;
+//                        break;
+//                    case MotionEvent.ACTION_UP: // отпускание
+//                        send[5] ^= 1;
+//                        break;
+//                }
+//                return false;
+//            }
+//        });
+//
+//        button_x1.setOnTouchListener(new View.OnTouchListener() {
+//
+//            @Override
+//            public boolean onTouch(View v, MotionEvent event) {
+//                switch (event.getAction()) {
+//                    case MotionEvent.ACTION_DOWN: // нажатие
+//                        send[6] |= 16;
+//                        sendUdp = true;
+//                        break;
+//                    case MotionEvent.ACTION_UP: // отпускание
+//                        send[6] ^= 16;
+//                        break;
+//                }
+//                return false;
+//            }
+//        });
+//        ;
+//        button_x2.setOnTouchListener(new View.OnTouchListener() {
+//
+//            @Override
+//            public boolean onTouch(View v, MotionEvent event) {
+//                switch (event.getAction()) {
+//                    case MotionEvent.ACTION_DOWN: // нажатие
+//                        send[6] |= 1;
+//                        sendUdp = true;
+//                        break;
+//                    case MotionEvent.ACTION_UP: // отпускание
+//                        send[6] ^= 1;
+//                        break;
+//                }
+//                return false;
+//            }
+//        });
+//        ;
+//        button_y1.setOnTouchListener(new View.OnTouchListener() {
+//
+//            @Override
+//            public boolean onTouch(View v, MotionEvent event) {
+//                switch (event.getAction()) {
+//                    case MotionEvent.ACTION_DOWN: // нажатие
+//                        send[7] |= 16;
+//                        sendUdp = true;
+//                        break;
+//                    case MotionEvent.ACTION_UP: // отпускание
+//                        send[7] ^= 16;
+//                        break;
+//                }
+//                return false;
+//            }
+//        });
+//        ;
+//        button_y2.setOnTouchListener(new View.OnTouchListener() {
+//
+//            @Override
+//            public boolean onTouch(View v, MotionEvent event) {
+//                switch (event.getAction()) {
+//                    case MotionEvent.ACTION_DOWN: // нажатие
+//                        send[7] |= 1;
+//                        sendUdp = true;
+//                        break;
+//                    case MotionEvent.ACTION_UP: // отпускание
+//                        send[7] ^= 1;
+//                        break;
+//                }
+//                return false;
+//            }
+//        });
+//        ;
 
         Switch switch_micro = findViewById(R.id.micro);
         Switch switch_camera = findViewById(R.id.camera);
@@ -459,10 +485,10 @@ public class MainActivity extends AppCompatActivity implements CompoundButton.On
     }
 
 
-
-    public String getSend() {
-        return byteArrayToHex(send);
-    }
+//
+//    public String getSend() {
+//        return byteArrayToHex(send);
+//    }
 
     private static String byteArrayToHex(byte[] a) {
         StringBuilder sb = new StringBuilder(a.length * 2);
